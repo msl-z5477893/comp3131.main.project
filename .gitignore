@@ -1,0 +1,4 @@
+buildvc
+runvc
+out/
+*.jar
