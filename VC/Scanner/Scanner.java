@@ -24,6 +24,9 @@ public final class Scanner {
     private char currentChar;
     private SourcePosition sourcePos;
 
+    private int line;
+    private int col;
+
     // =========================================================
 
     public Scanner(SourceFile source, ErrorReporter reporter) {
@@ -36,6 +39,8 @@ public final class Scanner {
 	currentChar = sourceFile.getNextChar();
 
         // Initialise your counters for counting line and column numbers here
+        line = 1;
+        col = 1;
     }
 
     public void enableDebugging() {
@@ -49,6 +54,7 @@ public final class Scanner {
 
   	// You may save the lexeme of the current token incrementally here
   	// You may also increment your line and column counters here
+
     }
 
 
@@ -73,6 +79,10 @@ public final class Scanner {
             case '(':
                 accept();
                 return Token.LPAREN;
+
+            case ')':
+                accept();
+                return Token.RPAREN;
             // ...
             case '.':
        	    //  Handle floats (by calling auxiliary functions)
