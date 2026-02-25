@@ -57,14 +57,37 @@ public final class Scanner {
     }
 
     // accept gets the next character from the source program.
-    private void accept() {
+    private void accept(boolean save) {
 
-     	currentChar = sourceFile.getNextChar();
+        // EOF is unacceptable
+        if (currentChar == SourceFile.eof) return;
+        if (currentChar == '\n') {
+            col = 1;
+            line += 1;
+        } else col += 1;
+
 
   	// You may save the lexeme of the current token incrementally here
   	// You may also increment your line and column counters here
-  	col += 1;
+        if (save) {
+            currentSpelling.append(currentChar);
+
+            boolean isSourcePosDefault = sourcePos.charStart == 0 &&
+                                         sourcePos.charFinish == 0 &&
+                                         sourcePos.lineStart == 0 &&
+                                         sourcePos.lineFinish == 0;
+
+            if (isSourcePosDefault) sourcePos = new SourcePosition(line, line, col, col);
+            else {
+                // TODO: this implementation is potentially buggy
+                sourcePos.charFinish += 1;
+            }
+  	}
+
+     	currentChar = sourceFile.getNextChar();
     }
+
+    private void accept() { accept(true); }
 
 
     // inspectChar returns the n-th character after currentChar in the input stream. 
@@ -95,27 +118,19 @@ public final class Scanner {
         switch (currentChar) {
             // Handle separators
             case '(':
-                currentSpelling = new StringBuilder("(");
-                sourcePos = new SourcePosition(line, line, col, col);
                 accept();
                 return Token.LPAREN;
 
             case ')':
-                currentSpelling = new StringBuilder(")");
-                sourcePos = new SourcePosition(line, line, col, col);
                 accept();
                 return Token.RPAREN;
             case '[':
-                currentSpelling = new StringBuilder("[");
-                sourcePos = new SourcePosition(line, line, col, col);
                 accept();
                 return Token.LBRACKET;
 
             case ']':
-                currentSpelling = new StringBuilder("]");
-                sourcePos = new SourcePosition(line, line, col, col);
                 accept();
-                return Token.RPAREN;
+                return Token.RBRACKET;
             // ...
             case '.':
        	    // Handle floats (by calling auxiliary functions)
@@ -150,32 +165,34 @@ public final class Scanner {
         // Handle identifiers, keywords and numeric literals
         // ...
 
-        if (Character.isLetter(currentChar) || currentChar == '_') {
-            currentSpelling = new StringBuilder(currentChar);
-            anchorTokenCol = col;
-            anchorTokenLine = line;
+        if (__isValidAsciiIdChar(currentChar, true)) {
             accept();
-            boolean isValid = Character.isLetter(currentSpelling)
-            || Character.isDigit(currentSpelling)
-            || currentChar == '_';
+            boolean isValid = __isValidAsciiIdChar(currentChar);
             while (isValid) {
-                currentSpelling.append(currentChar);
                 accept();
-                isValid = Character.isLetter(currentSpelling)
-                || Character.isDigit(currentSpelling)
-                || currentChar == '_';
+                isValid = __isValidAsciiIdChar(currentChar);
             }
-
-            sourcePos = nw SourcePosition()
         } 
 
         accept();
         return Token.ERROR;
     }
 
-    private void skipSpaceAndComments(int skip_type) {
-        // ...
-        switch (skip_type) {
+    private boolean __isValidAsciiIdChar(char c, boolean isStarting) {
+        boolean starting = (c >= 'a' && c <= 'z') ||
+                           (c >= 'A' && c <= 'Z') ||
+                           c == '_';
+       if (!isStarting) return starting ||
+                               (c >= '0' && c <= '9');
+       else return starting;
+    }
+
+    private boolean __isValidAsciiIdChar(char c) {
+        return __isValidAsciiIdChar(c, false);
+    }
+
+    private void skipSpaceAndComments() {
+    /*   switch (skip_type) {
             case SKIP_WHITESPACE:
                 switch (currentChar) {
                     case ' ':
@@ -188,53 +205,44 @@ public final class Scanner {
                         break;
                 }
                 break;
-	}
-    }
-
-    private void __skipWhitespaceUnit() {
-        switch (currentChar) {
-            case ' ':
-                accept();
+    }*/
+        while (true) {
+            if (currentChar == ' ' && currentChar == '\n') accept(false);
+            else if (currentChar == '/') {
+                accept(false);
+                __skipComment();
                 break;
-            case '\n':
-                accept();
-                line += 1;
-                col = 1;
-                break;
+            }
+            else break;
         }
     }
 
-    // TODO: these will make errors, write code that handles them
-    private void __skipComment(boolean multiline) {
-        if (multiline) {
-            while (currentChar != '\n' || currentChar != SourceFile.eof) accept();
-        } else {
-            while (true) {
-                if (currentChar == '*') {
-                    accept();
-                    if (currentChar == '/') break;
-                }
-                if (currentChar == SourceFile.eof) break;
-
-                accept();
+    // FIX: give error if multiline comment is left unterminated
+    private void __skipComment() {
+        if (currentChar == '/') {
+            while (currentChar != '\n') accept(false);
+            accept(false);
+        } else if (currentChar == '*') {
+            accept(false);
+            int toExitState = 0;
+            while (toExitState != 2) {
+                if (currentChar == '/' && toExitState == 1) toExitState = 2;
+                else if (currentChar == '*') toExitState = 1;
+                else if (currentChar == SourceFile.eof) return;
+                else toExitState = 0;
+                accept(false);
             }
         }
     }
 
-    // preferably, from the initial state of the source code, it should be possible
-    // for us to incrementally build the tokens within the nextToken function.
     public Token getToken() {
         Token token;
         int kind;
 
         // Skip white space and comments
-        skipSpaceAndComments(SKIP_WHITESPACE);
-        if (currentSpelling == null) {
-            currentSpelling = new StringBuilder();
-        }
-        if (sourcePos == null) {
-            sourcePos = new SourcePosition();
-        }
+        skipSpaceAndComments();
+        currentSpelling = new StringBuilder();
+        sourcePos = new SourcePosition();
 
         // You need to record the position of the current token somehow
 
@@ -247,8 +255,6 @@ public final class Scanner {
             System.out.println(token);
         }
 
-        sourcePos = new SourcePosition(line, line, col, col);
-        currentSpelling = new StringBuilder();
         return token;
     }
 }
