@@ -174,7 +174,8 @@ public final class Scanner {
       // the rest of these tokens aren't necessarily singlechar,
       // but begins with a specific symbol
       case '.':
-        return __acceptFloat();
+        __acceptFloat();
+        return Token.FLOATLITERAL;
       case '|':
         accept();
         if (currentChar == '|') {
@@ -201,7 +202,9 @@ public final class Scanner {
               case 't':
               case '\'':
               case '"':
+              case '\\':
                 accept();
+                break;
               default: return Token.ERROR;
             }
           } else accept();
@@ -222,11 +225,13 @@ public final class Scanner {
     // ...
 
     if (__isNumeric(currentChar)) {
+      boolean isFloat = false;
       accept();
       while (__isNumeric(currentChar)) accept();
-      if (currentChar == '.' || currentChar == 'E' || currentChar == 'e')
-        return __acceptFloat();
-      else return Token.INTLITERAL;
+      if (currentChar == '.' || currentChar == 'E' || currentChar == 'e') {
+        __acceptFloat();
+      }
+      if (isFloat) return Token.FLOATLITERAL; else return Token.INTLITERAL;
     }
 
     if (__isValidAsciiIdChar(currentChar, true)) {
@@ -253,23 +258,33 @@ public final class Scanner {
   }
 
   // @note: logic here is a bit finicky, will look for improvement in next assignment
-  private int __acceptFloat() {
+  private void __acceptFloat() {
     // int expFoundState = 0;
     if (currentChar == '.') accept();
     while (__isNumeric(currentChar)) accept();
+    // only these kind of exp suffixes are valid
+    // E1234...
+    // E+1234...
+    // E-1234...
+    // i.e., numbers must always come after them
     if (currentChar == 'e' || currentChar == 'E') {
-      accept();
-      if (currentChar == '+' || currentChar == '-') accept();
-      if (__isNumeric(currentChar))
+      if (inspectChar(1) == '+' || inspectChar(1) == '-') {
+        if (__isNumeric(inspectChar(2))) { accept(); accept(); }
+        else return;
         while (__isNumeric(currentChar)) accept();
-      else return Token.ERROR;
+      }
+      if (__isNumeric(inspectChar(1))) {
+        accept();
+        while (__isNumeric(currentChar)) accept();
+      }
+      else return;
     }
-    while (__isNumeric(currentChar)) accept();
-    return Token.FLOATLITERAL;
+    // while (__isNumeric(currentChar)) accept();
+    // return Token.FLOATLITERAL;
   }
 
   // all chars in string literals incl. escape characters are technically printable
-  // (see https://www.ascii-code.com/ for reference)
+  // (https://www.ascii-code.com/ for reference)
   private boolean __isValidStringChar(char c) {
     return c >= ' ' && c <= '~'; 
   }
