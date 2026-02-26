@@ -191,8 +191,10 @@ public final class Scanner {
       case '"':
         accept();
         while (currentChar != '"') {
-          if (!__isValidStringChar(currentChar)) return Token.ERROR;
-          else if (currentChar == '\\') {
+          if (!__isValidStringChar(currentChar)) {
+            System.out.println("ERROR: Illegal character detected.");
+            return Token.ERROR;
+          } else if (currentChar == '\\') {
             accept();
             switch (currentChar) {
               case 'b':
@@ -205,7 +207,9 @@ public final class Scanner {
               case '\\':
                 accept();
                 break;
-              default: return Token.ERROR;
+              default:
+                System.out.println("ERROR: Illegal escape sequence.");
+                return Token.ERROR;
             }
           } else accept();
         }
@@ -229,6 +233,7 @@ public final class Scanner {
       accept();
       while (__isNumeric(currentChar)) accept();
       if (currentChar == '.' || currentChar == 'E' || currentChar == 'e') {
+        isFloat = true;
         __acceptFloat();
       }
       if (isFloat) return Token.FLOATLITERAL; else return Token.INTLITERAL;
@@ -250,7 +255,7 @@ public final class Scanner {
   }
 
   // copies Token class' spelling-to-kind conversion functionality
-  // this is designed to simplify lookups and conversions of nextToken()
+  // this is designed to simplify some of the lookups and conversions of nextToken()
   private int __spellingToTokenKind() {
     for (int i = 0; i < CONST_KEYWORDS.length; i++)
       if (CONST_KEYWORDS[i].equals(currentSpelling.toString())) return i;
@@ -272,12 +277,10 @@ public final class Scanner {
         if (__isNumeric(inspectChar(2))) { accept(); accept(); }
         else return;
         while (__isNumeric(currentChar)) accept();
-      }
-      if (__isNumeric(inspectChar(1))) {
+      } else if (__isNumeric(inspectChar(1))) {
         accept();
         while (__isNumeric(currentChar)) accept();
-      }
-      else return;
+      } else return;
     }
     // while (__isNumeric(currentChar)) accept();
     // return Token.FLOATLITERAL;
@@ -331,7 +334,10 @@ public final class Scanner {
       while (toExitState != 2) {
         if (currentChar == '/' && toExitState == 1) toExitState = 2;
         else if (currentChar == '*') toExitState = 1;
-        else if (currentChar == SourceFile.eof) return;
+        else if (currentChar == SourceFile.eof) {
+          System.out.println("ERROR: Unterminated comment.");
+          return;
+        }
         else toExitState = 0;
         accept(false);
       }
