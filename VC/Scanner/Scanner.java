@@ -143,15 +143,6 @@ public final class Scanner {
     return sourceFile.inspectChar(nthChar);
   }
 
-  // private void __recallRecentTokenPos() {
-  //   recentTokenLine = line;
-  //   recentTokenCol = col;
-  // }
-
-  // private boolean __isSingleChar(int tokenKind) {
-  //   return 10 < tokenKind && tokenKind < 33;
-  // }
-
   private int nextToken() {
     // Tokens: separators, operators, literals, identifiers, and keywords
     switch (currentChar) {
@@ -177,16 +168,13 @@ public final class Scanner {
       case '>':
       case '!':
         accept();
-        if (currentChar == '=') {
-            accept();
-        }
+        if (currentChar == '=') accept();
         return __spellingToTokenKind();
 
-
+      // the rest of these tokens aren't necessarily singlechar,
+      // but begins with a specific symbol
       case '.':
         return __acceptFloat();
-         // Handle floats (by calling auxiliary functions)
-      // Handle separators
       case '|':
         accept();
         if (currentChar == '|') {
@@ -194,11 +182,32 @@ public final class Scanner {
           return Token.OROR;
         } else {
           return Token.ERROR;
-    }  
+        }  
       case '&':
-        accept();
-        if (currentChar == '&') accept();
+        accept(); if (currentChar == '&') accept();
         return __spellingToTokenKind();
+
+      case '"':
+        accept();
+        while (currentChar != '"') {
+          if (!__isValidStringChar(currentChar)) return Token.ERROR;
+          else if (currentChar == '\\') {
+            accept();
+            switch (currentChar) {
+              case 'b':
+              case 'f':
+              case 'n':
+              case 'r':
+              case 't':
+              case '\'':
+              case '"':
+                accept();
+              default: return Token.ERROR;
+            }
+          } else accept();
+        }
+        accept();
+        return Token.STRINGLITERAL;
     // ...
       case SourceFile.eof:
         currentSpelling.append(Token.spell(Token.EOF));
@@ -238,10 +247,8 @@ public final class Scanner {
   // copies Token class' spelling-to-kind conversion functionality
   // this is designed to simplify lookups and conversions of nextToken()
   private int __spellingToTokenKind() {
-    for (int i = 0; i < CONST_KEYWORDS.length; i++) {
-      // System.out.println(String.format(""));
+    for (int i = 0; i < CONST_KEYWORDS.length; i++)
       if (CONST_KEYWORDS[i].equals(currentSpelling.toString())) return i;
-    }
     return Token.ERROR;
   }
 
@@ -259,6 +266,12 @@ public final class Scanner {
     }
     while (__isNumeric(currentChar)) accept();
     return Token.FLOATLITERAL;
+  }
+
+  // all chars in string literals incl. escape characters are technically printable
+  // (see https://www.ascii-code.com/ for reference)
+  private boolean __isValidStringChar(char c) {
+    return c >= ' ' && c <= '~'; 
   }
 
   private boolean __isNumeric(char c) {
