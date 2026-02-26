@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+javac -d out VC/vc.java
+
+jar --create \
+    --file vc.jar \
+    --main-class VC.vc \
+    -C out .
