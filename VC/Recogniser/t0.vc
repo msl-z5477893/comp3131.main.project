@@ -1,0 +1,9 @@
+/* The starter code can compile a single function consisting 
+ * of expression statements, where each expression contains only '+' and '\*'. 
+ */
+
+void main() {
+   
+	x + (1 * y) + 100;
+
+}
