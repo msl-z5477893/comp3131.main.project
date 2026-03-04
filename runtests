@@ -4,5 +4,5 @@
 for test in $(find "provided.tests/Scanner/tests/" -type f); do
     testno=$(basename "$test" | sed 's/test//')
     "./runvc" "provided.tests/Scanner/tests/test$testno" > "provided.tests/Scanner/output/result$testno"
-    diff "provided.tests/Scanner/expected/result$testno" "provided.tests/Scanner/output/result$testno"
+    diff -u "provided.tests/Scanner/expected/result$testno" "provided.tests/Scanner/output/result$testno"
 done

@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+cp -vr ref.sols/* out/VC
+
+jar --create \
+    --file vc.jar \
+    --main-class VC.vc \
+    -C out .
