@@ -1,4 +1,5 @@
 # buildvc
 # runvc
 out/
+provided.tests/*/output/*
 *.jar
