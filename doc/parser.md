@@ -94,3 +94,13 @@ Parameter List
 This one is straight-up unimplemented.
 
 - [ ] Implement parameter list.
+
+# Approach Proposal
+
+Start with the simple ones first, as these will become building
+blocks toward the more complex ones.
+1. primary-expr -> unary-expr -> additive-expr
+
+Each parse function `parse<grammarName>()` seem to correspond with
+an actual production in VC grammar.
+So a solid approach is to implement each production one-by-one.

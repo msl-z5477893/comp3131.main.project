@@ -169,12 +169,54 @@ public class Recogniser {
     }
 
     void parseAssignExpr() throws SyntaxError {
+        // parseAdditiveExpr();
+        while (true) {
+            parseCondOrExpr();
+            if (currentToken.kind != Token.EQ) break;
+            acceptOperator();
+        }
+    }
+
+    void parseCondOrExpr() throws SyntaxError {
+        parseCondAndExpr();
+        while (currentToken.kind == Token.OROR) {
+            acceptOperator();
+            parseCondAndExpr();
+        }
+    }
+
+    void parseCondAndExpr() throws SyntaxError {
+        parseEqualityExpr();
+        while (currentToken.kind == Token.ANDAND) {
+            acceptOperator();
+            parseEqualityExpr();
+        }
+    }
+
+    void parseEqualityExpr() throws SyntaxError {
+        parseRelExpr();
+        while (currentToken.kind == Token.EQEQ
+               || currentToken.kind == Token.NOTEQ) {
+            acceptOperator();
+            parseRelExpr();
+        }
+    }
+
+    void parseRelExpr() throws SyntaxError {
         parseAdditiveExpr();
+        while (currentToken.kind == Token.GT
+               || currentToken.kind == Token.GTEQ
+               || currentToken.kind == Token.LT
+               || currentToken.kind == Token.LTEQ) {
+            acceptOperator();
+            parseAdditiveExpr();
+        }
     }
 
     void parseAdditiveExpr() throws SyntaxError {
         parseMultiplicativeExpr();
-        while (currentToken.kind == Token.PLUS) {
+        while (currentToken.kind == Token.PLUS
+               || currentToken.kind == Token.MINUS) {
             acceptOperator();
             parseMultiplicativeExpr();
         }
@@ -182,7 +224,8 @@ public class Recogniser {
 
     void parseMultiplicativeExpr() throws SyntaxError {
         parseUnaryExpr();
-        while (currentToken.kind == Token.MULT) {
+        while (currentToken.kind == Token.MULT
+               || currentToken.kind == Token.DIV) {
             acceptOperator();
             parseUnaryExpr();
         }
@@ -190,7 +233,7 @@ public class Recogniser {
 
     void parseUnaryExpr() throws SyntaxError {
     	switch (currentToken.kind) {
-            case Token.MINUS -> {
+            case Token.MINUS, Token.PLUS, Token.NOT -> {
             	acceptOperator();
             	parseUnaryExpr();
             }
@@ -198,6 +241,10 @@ public class Recogniser {
     	}
     }
 
+    // TODO: implement the following productions
+    // identifier arg-list?
+    // identifier "[" expr "]"
+    // "(" expr ")"
     void parsePrimaryExpr() throws SyntaxError {
     	switch (currentToken.kind) {
             case Token.ID -> parseIdent();
@@ -207,6 +254,9 @@ public class Recogniser {
             	match(Token.RPAREN);
             }
             case Token.INTLITERAL -> parseIntLiteral();
+            case Token.FLOATLITERAL -> parseFloatLiteral();
+            case Token.BOOLEANLITERAL -> parseBooleanLiteral();
+            case Token.STRINGLITERAL -> parseStringLiteral(); 
             default -> syntacticError("illegal primary expression", currentToken.spelling);
     	}
     }
@@ -215,6 +265,7 @@ public class Recogniser {
 
     // Calls these methods rather than accept(). In future assignments, 
     // literal AST nodes will be constructed inside these methods.
+    // FIXME?: Unused checks due to parsePrimaryExpr implementation
 
     void parseIntLiteral() throws SyntaxError {
         if (currentToken.kind == Token.INTLITERAL) {
@@ -240,5 +291,12 @@ public class Recogniser {
         }
     }
 
+    void parseStringLiteral() throws SyntaxError {
+        if (currentToken.kind == Token.STRINGLITERAL) {
+            accept();
+        } else {
+            syntacticError("boolean literal expected here", "");
+        }
+    }
 }
 
