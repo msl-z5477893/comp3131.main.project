@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
-# Provided Scanner tests are ran here.
+# Provided scanner tests given post assignment period are done here.
+# depends on runvc to function
 for test in $(find "provided.tests/Scanner/tests/" -type f); do
     [ -d "provided.tests/Scanner/output/" ] || mkdir "provided.tests/Scanner/output/"
     testno=$(basename "$test" | sed 's/test//')

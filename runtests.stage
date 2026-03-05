@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+# Automate testing using the given VC files and solution files found in each section.
+# Note that stages matter i.e., suppose that the Scanner stage came before the Recogniser
+# stage, then all the tests to be performed with files in the Scanner are rendered useless afterwards.
+# In so far, the recognised stages are:
+# Scanner -> Recogniser -> Parser
+
+__STAGE="Recogniser"
+for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
+    teststdout="$(mktemp)"
+    testname=$(basename "$test" | sed 's/\.vc//')
+    "./runvc" "$test" > "$teststdout"
+    diff -u "VC/$__STAGE/$testname.sol" "$teststdout" && echo "IMPLEMENTATION SUCCESSFUL ON $test"
+    rm "$teststdout"
+done

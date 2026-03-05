@@ -1,8 +1,7 @@
 #!/usr/bin/bash
 
+# adjusted to apply reference solutions from previous assessments.
+
 javac -d out VC/vc.java
 
-jar --create \
-    --file vc.jar \
-    --main-class VC.vc \
-    -C out .
+"./apply.ref"
