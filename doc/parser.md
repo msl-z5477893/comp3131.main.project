@@ -41,12 +41,12 @@ for the overall statement parsing.
 The following statement variants are assigned to `stmt`.
 - [x] compound-stmt (in starter code, needs expansion)
 - [x] continue-stmt (implemented in starter)
-- [ ] if-stmt
-- [ ] for-stmt
-- [ ] while-stmt
-- [ ] break-stmt
-- [ ] return-stmt
-- [ ] expr-stmt
+- [x] if-stmt
+- [x] for-stmt
+- [x] while-stmt
+- [x] break-stmt
+- [x] return-stmt
+- [x] expr-stmt
 
 Expressions
 -----------
@@ -79,14 +79,14 @@ These are the nonterms described in both with their implementation
 status.
 
 - [x] assignment-expr (in starter code, needs expansion)
-- [ ] cond-or-expr
-- [ ] cond-and-expr
-- [ ] equality-expr
-- [ ] rel-expr
-- [ ] additive-expr (in starter code, needs expansion)
-- [ ] multiplicative-expr
-- [ ] unary-expr
-- [ ] primary-expr (in starter code, needs expansion)
+- [x] cond-or-expr
+- [x] cond-and-expr
+- [x] equality-expr
+- [x] rel-expr
+- [x] additive-expr (in starter code, needs expansion)
+- [x] multiplicative-expr
+- [x] unary-expr
+- [x] primary-expr (in starter code, needs expansion)
 
 Parameter List
 --------------
