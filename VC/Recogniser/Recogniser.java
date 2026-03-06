@@ -44,6 +44,17 @@ your own solution, as long as it adheres to the same public interface.
 
 */
 
+/*
+ * The grammar implemented by the parser deviates from the grammar defined in the
+ * VC spec so that it can be done at LL(1).
+ *
+ * The changes are the following:
+ * program -> ( define func-decl | define var-decl )*
+ * define -> type identifier.
+ * func-decl -> para-list compound-stmt
+ * var-decl -> ( "[" INTLITERAL? "]" )? ( "=" initialiser )? ( "," init-declaration-list )? ";"
+ */
+
 // TODO: implement params for grammar
 
 package VC.Recogniser;
@@ -99,10 +110,12 @@ public class Recogniser {
     }
 
     // ========================== DECLARATIONS ========================
-    // TODO: Still on it's starter code state
-    void parseFuncDecl() throws SyntaxError {
+    void parseDefine() throws SyntaxError {
         parseType();
         parseIdent();
+    }
+
+    void parseFuncDecl() throws SyntaxError {
         parseParamList();
         parseCompoundStmt();
     }
@@ -110,7 +123,7 @@ public class Recogniser {
     void parseVarDecl() throws SyntaxError {
         parseType();
         parseInitDeclList();
-        match(Token.COMMA);
+        match(Token.SEMICOLON);
     }
 
     void parseInitDeclList() throws SyntaxError {
