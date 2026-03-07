@@ -52,7 +52,9 @@ your own solution, as long as it adheres to the same public interface.
  * program -> ( define func-decl | define var-decl )*
  * define -> type identifier.
  * func-decl -> para-list compound-stmt
- * var-decl -> ( "[" INTLITERAL? "]" )? ( "=" initialiser )? ( "," init-declaration-list )? ";"
+ * var-decl -> array-decl? ( "=" initialiser )? ( "," init-declarator-list )? ";"
+ * array-decl -> "[" INTLITERAL? "]"
+ * declarator -> identifier array-decl?
  */
 
 // TODO: implement params for grammar
@@ -101,10 +103,19 @@ public class Recogniser {
 
     // ========================== PROGRAMS ========================
     public void parseProgram() {
+        // try {
+        //     parseFuncDecl();
+        //     if (currentToken.kind != Token.EOF) {
+        //         syntacticError("\"%\" wrong result type for a function", currentToken.spelling);
+        //     }
+        // } catch (SyntaxError s) { }
         try {
-            parseFuncDecl();
-            if (currentToken.kind != Token.EOF) {
-                syntacticError("\"%\" wrong result type for a function", currentToken.spelling);
+            while (currentToken.kind != Token.EOF) {
+                parseDefine();
+                switch(currentToken.kind) {
+                    case Token.LPAREN -> parseFuncDecl();
+                    default -> parseVarDecl();
+                }
             }
         } catch (SyntaxError s) { }
     }
@@ -121,8 +132,16 @@ public class Recogniser {
     }
 
     void parseVarDecl() throws SyntaxError {
-        parseType();
-        parseInitDeclList();
+        if (currentToken.kind == Token.LBRACKET)
+            parseArrayDecl();
+        if (currentToken.kind == Token.EQ) {
+            match(Token.EQ);
+            parseInit();
+        }
+        if (currentToken.kind == Token.COMMA) {
+            match(Token.COMMA);
+            parseInitDeclList();
+        }
         match(Token.SEMICOLON);
     }
 
@@ -142,13 +161,17 @@ public class Recogniser {
         }
     }
 
+
     void parseDeclare() throws SyntaxError {
         parseIdent();
-        if (currentToken.kind == Token.LBRACKET) {
-            match(Token.LBRACKET);
-            if (currentToken.kind == Token.INTLITERAL) parseIntLiteral();
-            match(Token.RBRACKET);
-        }
+        if (currentToken.kind == Token.LBRACKET)
+            parseArrayDecl();
+    }
+
+    void parseArrayDecl() throws SyntaxError {
+        match(Token.LBRACKET);
+        if (currentToken.kind != Token.RBRACKET) parseIntLiteral();
+        match(Token.RBRACKET);
     }
 
     void parseInit() throws SyntaxError {
@@ -166,10 +189,8 @@ public class Recogniser {
     // ========================== TYPE =================================
     void parseType() throws SyntaxError {
         switch (currentToken.kind) {
-            case Token.VOID, Token.BOOLEAN, Token.INT, Token.FLOAT -> {
-                accept();
-            }
-            default -> throw new SyntaxError();
+            case Token.VOID, Token.BOOLEAN, Token.INT, Token.FLOAT -> accept();
+            default -> syntacticError("\"%\" wrong result type for a function", currentToken.spelling);
         }
     }
 
@@ -180,6 +201,7 @@ public class Recogniser {
                || currentToken.kind == Token.BOOLEAN
                || currentToken.kind == Token.INT
                || currentToken.kind == Token.FLOAT) {
+            parseDefine();
             parseVarDecl();
         }
         parseStmtList();
@@ -195,12 +217,12 @@ public class Recogniser {
     void parseStmt() throws SyntaxError {
     	switch (currentToken.kind) {
             case Token.CONTINUE -> parseContinueStmt();
-            case Token.BREAK -> parseBreakStmt();
-            case Token.RETURN -> parseReturnStmt();
-            case Token.WHILE -> parseWhileStmt();
-            case Token.FOR -> parseForStmt();
-            case Token.IF -> parseIfStmt();
-            case Token.LCURLY -> parseCompoundStmt();
+            case Token.BREAK    -> parseBreakStmt();
+            case Token.RETURN   -> parseReturnStmt();
+            case Token.WHILE    -> parseWhileStmt();
+            case Token.FOR      -> parseForStmt();
+            case Token.IF       -> parseIfStmt();
+            case Token.LCURLY   -> parseCompoundStmt();
             default             -> parseExprStmt();
         }
     }
@@ -215,10 +237,6 @@ public class Recogniser {
         if (currentToken.kind != Token.RPAREN) parseExpr();
         match(Token.RPAREN);
         parseStmt();
-        if (currentToken.kind == Token.ELSE) {
-            accept();
-            parseStmt();
-        }
     }
 
     void parseIfStmt() throws SyntaxError {
@@ -228,7 +246,7 @@ public class Recogniser {
         match(Token.RPAREN);
         parseStmt();
         if (currentToken.kind == Token.ELSE) {
-            accept();
+            match(Token.ELSE);
             parseStmt();
         }
     }
@@ -386,11 +404,7 @@ public class Recogniser {
                         parseExpr();
                         match(Token.RBRACKET);
                     }
-                    case Token.LPAREN -> {
-                        accept();
-                        parseExpr();
-                        match(Token.RPAREN);
-                    }
+                    case Token.LPAREN -> parseArgList();
                 }
             }
             case Token.LPAREN -> {
@@ -477,7 +491,7 @@ public class Recogniser {
         if (currentToken.kind == Token.STRINGLITERAL) {
             accept();
         } else {
-            syntacticError("boolean literal expected here", "");
+            syntacticError("string literal expected here", "");
         }
     }
 }
