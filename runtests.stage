@@ -6,19 +6,34 @@
 # In so far, the recognised stages are:
 # Scanner -> Recogniser -> Parser
 
-__STAGE="Recogniser"
+__STAGE="Parser"
 __total=0
 __success=0
 for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
-    teststdout="$(mktemp)"
+    teststdout1="$(mktemp)"
+    teststdout2="$(mktemp)"
     testname=$(basename "$test" | sed 's/\.vc//')
-    "./runvc" "$test" > "$teststdout"
-    diff -u "VC/$__STAGE/$testname.sol" "$teststdout" && {
+    "./runvc" -u "$teststdout1" "$test"
+    "./runvc" -u "$teststdout2" "$teststdout1"
+    diff -u "$teststdout1" "$teststdout2" && {
         echo "IMPLEMENTATION SUCCESSFUL ON $test"
         __success=$((__success + 1))
     }
     __total=$((__total + 1))
-    rm "$teststdout"
+    rm "$teststdout1"
+    rm "$teststdout2"
 done
+# OUTDATED CODE
+# for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
+#     teststdout="$(mktemp)"
+#     testname=$(basename "$test" | sed 's/\.vc//')
+#     "./runvc" "$test" > "$teststdout"
+#     diff -u "VC/$__STAGE/$testname.sol" "$teststdout" && {
+#         echo "IMPLEMENTATION SUCCESSFUL ON $test"
+#         __success=$((__success + 1))
+#     }
+#     __total=$((__total + 1))
+#     rm "$teststdout"
+# done
 
 echo "$__success/$__total test cases successful."

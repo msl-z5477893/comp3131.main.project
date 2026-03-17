@@ -358,7 +358,7 @@ public class Parser {
         start(unaryPos);
 
         return switch (currentToken.kind) {
-            case Token.MINUS -> {
+            case Token.MINUS, Token.PLUS, Token.NOT -> {
                 Operator opAST = acceptOperator();
                 Expr e2AST = parseUnaryExpr();
                 finish(unaryPos);
@@ -390,6 +390,21 @@ public class Parser {
                 IntLiteral ilAST = parseIntLiteral();
                 finish(primPos);
                 yield new IntExpr(ilAST, primPos);
+            }
+            case Token.FLOATLITERAL -> {
+                FloatLiteral flAST = parseFloatLiteral();
+                finish(primPos);
+                yield new FloatExpr(flAST, primPos);
+            }
+            case Token.BOOLEANLITERAL -> {
+                BooleanLiteral blAST = parseBooleanLiteral();
+                finish(primPos);
+                yield new BooleanExpr(blAST, primPos);
+            }
+            case Token.STRINGLITERAL -> {
+                StringLiteral slAST = parseStringLiteral();
+                finish(primPos);
+                yield new StringExpr(slAST, primPos);
             }
             default -> throw syntacticError("illegal primary expression", currentToken.spelling);
         };
@@ -449,5 +464,14 @@ public class Parser {
         }
     }   
 
+    private StringLiteral parseStringLiteral() throws SyntaxError {
+        if (currentToken.kind == Token.STRINGLITERAL) {
+            String spelling = currentToken.spelling;
+            accept();
+            return new StringLiteral(spelling, previousTokenPosition);
+        } else {
+            throw syntacticError("string literal expected here", "");
+        }
+    }   
 }
 
