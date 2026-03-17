@@ -6,12 +6,13 @@
 # In so far, the recognised stages are:
 # Scanner -> Recogniser -> Parser
 
+# FIXME: inconsistent rm behaviour (temp files aren't deleted)
 __STAGE="Parser"
 __total=0
 __success=0
 for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
-    teststdout1="$(mktemp)"
-    teststdout2="$(mktemp)"
+    teststdout1="$(mktemp -t vc_test1_XXXXXXXXX)"
+    teststdout2="$(mktemp -t vc_test2_XXXXXXXXX))"
     testname=$(basename "$test" | sed 's/\.vc//')
     "./runvc" -u "$teststdout1" "$test"
     "./runvc" -u "$teststdout2" "$teststdout1"
@@ -19,10 +20,11 @@ for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
         echo "IMPLEMENTATION SUCCESSFUL ON $test"
         __success=$((__success + 1))
     }
+    # rm "$teststdout1" "$teststdout2" "VC/$__STAGE/$testname.vct"
+    rm "$teststdout1" "$teststdout2"
     __total=$((__total + 1))
-    rm "$teststdout1"
-    rm "$teststdout2"
 done
+
 # OUTDATED CODE
 # for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
 #     teststdout="$(mktemp)"
