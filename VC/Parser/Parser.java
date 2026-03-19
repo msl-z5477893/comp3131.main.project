@@ -199,6 +199,13 @@ public class Parser {
         SourcePosition typePos = new SourcePosition();
         start(typePos);
 
+        switch (currentToken.kind) {
+            Token.VOID -> {
+                accept();
+                typeAST = new VoidType(typePos);
+            }
+        }
+
         match(Token.VOID);
 
         finish(typePos);
@@ -309,7 +316,28 @@ public class Parser {
 
     Expr parseExpr() throws SyntaxError {
         Expr exprAST = null;
+        exprAST = parseAssignExpr();
+        return exprAST;
+    }
+
+    Expr parseRelExpr() throws SyntaxError {
+        Expr exprAST = null;
         exprAST = parseAdditiveExpr();
+        return exprAST;
+
+        exprAST = parseMultiplicativeExpr();
+        while (currentToken.kind == Token.GT
+           || currentToken.kind == Token.GTEQ
+           || currentToken.kind == Token.LT
+           || currentToken.kind == Token.LTEQ) {
+            Operator opAST = acceptOperator();
+            Expr e2AST = parseMultiplicativeExpr();
+
+            SourcePosition addPos = new SourcePosition();
+            copyStart(addStartPos, addPos);
+            finish(addPos);
+            exprAST = new BinaryExpr(exprAST, opAST, e2AST, addPos);
+        }
         return exprAST;
     }
 
@@ -386,6 +414,12 @@ public class Parser {
                 match(Token.RPAREN);
                 yield exprAST;
             }
+            case Token.LBRACKET -> {
+                accept();
+                Expr exprAST = parseExpr();
+                match(Token.RBRACKET);
+                yield exprAST;
+            }
             case Token.INTLITERAL -> {
                 IntLiteral ilAST = parseIntLiteral();
                 finish(primPos);
@@ -427,11 +461,11 @@ public class Parser {
 
     // acceptOperator parses an operator, and constructs a leaf AST for it
 
-      Operator acceptOperator() throws SyntaxError {
+    Operator acceptOperator() throws SyntaxError {
         String spelling = currentToken.spelling;
         accept();
         return new Operator(spelling, previousTokenPosition);
-      }
+    }
 
  // ========================== LITERALS ========================
     private IntLiteral parseIntLiteral() throws SyntaxError {

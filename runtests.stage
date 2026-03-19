@@ -5,23 +5,24 @@
 # stage, then all the tests to be performed with files in the Scanner are rendered useless afterwards.
 # In so far, the recognised stages are:
 # Scanner -> Recogniser -> Parser
+# FIXME: No reliable way of checking if parser implementation has been determined as of late.
 
 # FIXME: inconsistent rm behaviour (temp files aren't deleted)
 __STAGE="Parser"
 __total=0
 __success=0
 for test in $(find "VC/$__STAGE/" -type f -name "*.vc"); do
-    teststdout1="$(mktemp -t vc_test1_XXXXXXXXX)"
-    teststdout2="$(mktemp -t vc_test2_XXXXXXXXX))"
+    teststdout1="$(mktemp)"
+    teststdout2="$(mktemp)"
     testname=$(basename "$test" | sed 's/\.vc//')
     "./runvc" -u "$teststdout1" "$test"
     "./runvc" -u "$teststdout2" "$teststdout1"
     diff -u "$teststdout1" "$teststdout2" && {
-        echo "IMPLEMENTATION SUCCESSFUL ON $test"
+        # echo "IMPLEMENTATION SUCCESSFUL ON $test"
         __success=$((__success + 1))
     }
-    # rm "$teststdout1" "$teststdout2" "VC/$__STAGE/$testname.vct"
-    rm "$teststdout1" "$teststdout2"
+    rm "$teststdout1" "$teststdout2" || echo "ECHO: rm failed"
+    echo "$test aux files deleted"
     __total=$((__total + 1))
 done
 
