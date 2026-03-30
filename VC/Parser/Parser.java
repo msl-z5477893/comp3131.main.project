@@ -47,14 +47,14 @@ additive-expr       -> multiplicative-expr
                     |  additive-expr "+" multiplicative-expr
                     |  additive-expr "-" multiplicative-expr
 multiplicative-expr -> unary-expr
-                    |  multiplicative-expr "*" unary-expr
-                    |  multiplicative-expr "/" unary-expr
+	            |  multiplicative-expr "*" unary-expr
+	            |  multiplicative-expr "/" unary-expr
 unary-expr          -> "-" unary-expr
-                    |  primary-expr
+		    |  primary-expr
 
 primary-expr        -> identifier
-                    |  INTLITERAL
-                    | "(" expr ")"
+ 		    |  INTLITERAL
+		    | "(" expr ")"
  */
 
 package VC.Parser;
@@ -74,12 +74,12 @@ public class Parser {
     private SourcePosition dummyPos = new SourcePosition();
 
     public Parser (Scanner lexer, ErrorReporter reporter) {
-        scanner = lexer;
-        errorReporter = reporter;
+    	scanner = lexer;
+    	errorReporter = reporter;
 
-        previousTokenPosition = new SourcePosition();
+    	previousTokenPosition = new SourcePosition();
 
-        currentToken = scanner.getToken();
+    	currentToken = scanner.getToken();
     }
 
     // match checks to see f the current token matches tokenExpected.
@@ -87,49 +87,49 @@ public class Parser {
     // If not, reports a syntactic error.
 
     void match(int tokenExpected) throws SyntaxError {
-        if (currentToken.kind == tokenExpected) {
-            previousTokenPosition = currentToken.position;
-            currentToken = scanner.getToken();
-        } else {
-            throw syntacticError("\"%\" expected here", Token.spell(tokenExpected));
-        }
+    	if (currentToken.kind == tokenExpected) {
+      	    previousTokenPosition = currentToken.position;
+      	    currentToken = scanner.getToken();
+    	} else {
+           throw syntacticError("\"%\" expected here", Token.spell(tokenExpected));
+    	}
     }
 
     void accept() {
-        previousTokenPosition = currentToken.position;
-        currentToken = scanner.getToken();
+    	previousTokenPosition = currentToken.position;
+    	currentToken = scanner.getToken();
     }
 
     private SyntaxError syntacticError(String messageTemplate, String tokenQuoted) throws SyntaxError {
-        SourcePosition pos = currentToken.position;
-        errorReporter.reportError(messageTemplate, tokenQuoted, pos);
-        return new SyntaxError();
+    	SourcePosition pos = currentToken.position;
+	    errorReporter.reportError(messageTemplate, tokenQuoted, pos);
+	    return new SyntaxError();
     }
 
-    // start records the position of the start of a phrase.
-    // This is defined to be the position of the first
-    // character of the first token of the phrase.
+	// start records the position of the start of a phrase.
+	// This is defined to be the position of the first
+	// character of the first token of the phrase.
 
     void start(SourcePosition position) {
-        position.lineStart = currentToken.position.lineStart;
-        position.charStart = currentToken.position.charStart;
+    	position.lineStart = currentToken.position.lineStart;
+    	position.charStart = currentToken.position.charStart;
     }
 
-    // finish records the position of the end of a phrase.
-    // This is defined to be the position of the last
-    // character of the last token of the phrase.
+	// finish records the position of the end of a phrase.
+	// This is defined to be the position of the last
+	// character of the last token of the phrase.
 
     void finish(SourcePosition position) {
-        position.lineFinish = previousTokenPosition.lineFinish;
-        position.charFinish = previousTokenPosition.charFinish;
+    	position.lineFinish = previousTokenPosition.lineFinish;
+    	position.charFinish = previousTokenPosition.charFinish;
     }
 
     void copyStart(SourcePosition from, SourcePosition to) {
-        to.lineStart = from.lineStart;
-        to.charStart = from.charStart;
+    	to.lineStart = from.lineStart;
+    	to.charStart = from.charStart;
     }
 
-    // ========================== PROGRAMS ========================
+	// ========================== PROGRAMS ========================
 
     // ========================== PROGRAMS ========================
 
@@ -144,6 +144,7 @@ public class Parser {
             if (currentToken.kind != Token.EOF) {
                 syntacticError("\"%\" unknown type", currentToken.spelling);
             }
+
             return programAST;
         } catch (SyntaxError s) {
             return null;
@@ -152,320 +153,273 @@ public class Parser {
 
 
 
-    // ========================== DECLARATIONS ========================
+	// ========================== DECLARATIONS ========================
 
     ASTList<Decl> parseFuncDeclList() throws SyntaxError {
-        ASTList<Decl> dlAST = null;
-        Decl dAST = null;
+    	ASTList<Decl> dlAST = null;
+    	Decl dAST = null;
 
-        SourcePosition funcPos = new SourcePosition();
-        start(funcPos);
+    	SourcePosition funcPos = new SourcePosition();
+    	start(funcPos);
 
-        dAST = parseFuncDecl();
+    	dAST = parseFuncDecl();
     
-        if (currentToken.kind == Token.VOID) {
+    	if (currentToken.kind == Token.VOID) {
             dlAST = parseFuncDeclList();
-            finish(funcPos);
-            dlAST = new DeclList(dAST, dlAST, funcPos);
-        } else {
-            finish(funcPos);
-            dlAST = new DeclList(dAST, new EmptyDeclList(dummyPos), funcPos);
-        }
-        if (dlAST == null) dlAST = new EmptyDeclList(dummyPos);
+      	    finish(funcPos);
+      	    dlAST = new DeclList(dAST, dlAST, funcPos);
+    	} else {
+           finish(funcPos);
+           dlAST = new DeclList(dAST, new EmptyDeclList(dummyPos), funcPos);
+    	}
+    	if (dlAST == null) 
+           dlAST = new EmptyDeclList(dummyPos);
 
-        return dlAST;
+    	return dlAST;
     }
 
     Decl parseFuncDecl() throws SyntaxError {
-        Decl fAST = null; 
 
-        SourcePosition funcPos = new SourcePosition();
-        start(funcPos);
+    	Decl fAST = null; 
+    
+    	SourcePosition funcPos = new SourcePosition();
+    	start(funcPos);
 
-        Type tAST = parseType();
-        Ident iAST = parseIdent();
-        ASTList<Decl> fplAST = parseParaList();
-        Stmt cAST = parseCompoundStmt();
-        finish(funcPos);
-        fAST = new FuncDecl(tAST, iAST, fplAST, cAST, funcPos);
-        return fAST;
+    	Type tAST = parseType();
+    	Ident iAST = parseIdent();
+    	ASTList<Decl> fplAST = parseParaList();
+    	Stmt cAST = parseCompoundStmt();
+    	finish(funcPos);
+    	fAST = new FuncDecl(tAST, iAST, fplAST, cAST, funcPos);
+    	return fAST;
     }
 
-    //  ======================== TYPES ==========================
+	//  ======================== TYPES ==========================
 
     Type parseType() throws SyntaxError {
-        Type typeAST = null;
+    	Type typeAST = null;
 
-        SourcePosition typePos = new SourcePosition();
-        start(typePos);
+    	SourcePosition typePos = new SourcePosition();
+    	start(typePos);
 
-        switch (currentToken.kind) {
-            Token.VOID -> {
-                accept();
-                typeAST = new VoidType(typePos);
-            }
-        }
+    	match(Token.VOID);
 
-        match(Token.VOID);
+    	finish(typePos);
+    	typeAST = new VoidType(typePos);
 
-        finish(typePos);
-        typeAST = new VoidType(typePos);
+    	return typeAST;
+      }
 
-        return typeAST;
-    }
-
-    // ======================= STATEMENTS ==============================
+	// ======================= STATEMENTS ==============================
 
     Stmt parseCompoundStmt() throws SyntaxError {
-        Stmt cAST = null; 
+    	Stmt cAST = null; 
 
-        SourcePosition stmtPos = new SourcePosition();
-        start(stmtPos);
+    	SourcePosition stmtPos = new SourcePosition();
+    	start(stmtPos);
 
-        match(Token.LCURLY);
+    	match(Token.LCURLY);
 
-        // Insert code here to build a DeclList node for variable declarations
-        ASTList<Stmt> slAST = parseStmtList();
-        match(Token.RCURLY);
-        finish(stmtPos);
+    	// Insert code here to build a DeclList node for variable declarations
+    	ASTList<Stmt> slAST = parseStmtList();
+    	match(Token.RCURLY);
+    	finish(stmtPos);
 
-        /* In the subset of the VC grammar implemented in this starter code, no variable declarations are
-          * allowed. Therefore, a block (i.e., compound statement) is empty iff it has no statements.
-          */
+    	/* In the subset of the VC grammar implemented in this starter code, no variable declarations are
+     	 * allowed. Therefore, a block (i.e., compound statement) is empty iff it has no statements.
+     	 */
 
-        if (slAST.isEmpty()) 
+    	if (slAST.isEmpty()) 
              cAST = new EmptyCompStmt(stmtPos);
-        else
-              cAST = new CompoundStmt(new EmptyDeclList(dummyPos), slAST, stmtPos);
-        return cAST;
+    	else
+      	    cAST = new CompoundStmt(new EmptyDeclList(dummyPos), slAST, stmtPos);
+    	return cAST;
     }
 
 
     ASTList<Stmt> parseStmtList() throws SyntaxError {
-        ASTList<Stmt> slAST = null; 
+    	ASTList<Stmt> slAST = null; 
 
-        SourcePosition stmtPos = new SourcePosition();
-        start(stmtPos);
+    	SourcePosition stmtPos = new SourcePosition();
+    	start(stmtPos);
 
-        if (currentToken.kind != Token.RCURLY) {
-            Stmt sAST = parseStmt();
+    	if (currentToken.kind != Token.RCURLY) {
+      	    Stmt sAST = parseStmt();
             if (currentToken.kind != Token.RCURLY) {
-                slAST = parseStmtList();
-                finish(stmtPos);
-                slAST = new StmtList(sAST, slAST, stmtPos);
+          	slAST = parseStmtList();
+          	finish(stmtPos);
+          	slAST = new StmtList(sAST, slAST, stmtPos);
             } else {
-                finish(stmtPos);
-                slAST = new StmtList(sAST, new EmptyStmtList(dummyPos), stmtPos);
+          	finish(stmtPos);
+          	slAST = new StmtList(sAST, new EmptyStmtList(dummyPos), stmtPos);
             }
         } else {
-            slAST = new EmptyStmtList(dummyPos);
-        }
+      		slAST = new EmptyStmtList(dummyPos);
+       	}			 
     
-        return slAST;
+    	return slAST;
     }
 
     Stmt parseStmt() throws SyntaxError {
-        Stmt sAST = null;
+    	Stmt sAST = null;
 
-        sAST = parseExprStmt();
+    	sAST = parseExprStmt();
 
-        return sAST;
+    	return sAST;
     }
 
     Stmt parseExprStmt() throws SyntaxError {
-        Stmt sAST = null;
+    	Stmt sAST = null;
 
-        SourcePosition stmtPos = new SourcePosition();
-        start(stmtPos);
+    	SourcePosition stmtPos = new SourcePosition();
+    	start(stmtPos);
 
-        if (currentToken.kind == Token.ID
+    	if (currentToken.kind == Token.ID
             || currentToken.kind == Token.INTLITERAL
             || currentToken.kind == Token.LPAREN) {
-            Expr eAST = parseExpr();
-            match(Token.SEMICOLON);
-            finish(stmtPos);
-            sAST = new ExprStmt(eAST, stmtPos);
-        } else {
-            match(Token.SEMICOLON);
+        	Expr eAST = parseExpr();
+        	match(Token.SEMICOLON);
+        	finish(stmtPos);
+        	sAST = new ExprStmt(eAST, stmtPos);
+       	} else {
+      	    match(Token.SEMICOLON);
             finish(stmtPos);
             sAST = new ExprStmt(new EmptyExpr(dummyPos), stmtPos);
-        }
-        return sAST;
+    	}
+    	return sAST;
     }
 
 
-    // ======================= PARAMETERS =======================
+	// ======================= PARAMETERS =======================
 
     ASTList<Decl> parseParaList() throws SyntaxError {
-        ASTList<Decl> formalsAST = null;
+    	ASTList<Decl> formalsAST = null;
 
-        SourcePosition formalsPos = new SourcePosition();
-        start(formalsPos);
+    	SourcePosition formalsPos = new SourcePosition();
+    	start(formalsPos);
 
-        match(Token.LPAREN);
-        match(Token.RPAREN);
-        finish(formalsPos);
-        formalsAST = new EmptyParaList(formalsPos);
+    	match(Token.LPAREN);
+    	match(Token.RPAREN);
+    	finish(formalsPos);
+    	formalsAST = new EmptyParaList(formalsPos);
 
-        return formalsAST;
+    	return formalsAST;
     }
 
 
-    // ======================= EXPRESSIONS ======================
+	// ======================= EXPRESSIONS ======================
 
 
     Expr parseExpr() throws SyntaxError {
-        Expr exprAST = null;
-        exprAST = parseAssignExpr();
-        return exprAST;
-    }
-
-    Expr parseRelExpr() throws SyntaxError {
-        Expr exprAST = null;
-        exprAST = parseAdditiveExpr();
-        return exprAST;
-
-        exprAST = parseMultiplicativeExpr();
-        while (currentToken.kind == Token.GT
-           || currentToken.kind == Token.GTEQ
-           || currentToken.kind == Token.LT
-           || currentToken.kind == Token.LTEQ) {
-            Operator opAST = acceptOperator();
-            Expr e2AST = parseMultiplicativeExpr();
-
-            SourcePosition addPos = new SourcePosition();
-            copyStart(addStartPos, addPos);
-            finish(addPos);
-            exprAST = new BinaryExpr(exprAST, opAST, e2AST, addPos);
-        }
-        return exprAST;
+    	Expr exprAST = null;
+    	exprAST = parseAdditiveExpr();
+    	return exprAST;
     }
 
     Expr parseAdditiveExpr() throws SyntaxError {
-        Expr exprAST = null;
+    	Expr exprAST = null;
 
-        SourcePosition addStartPos = new SourcePosition();
-        start(addStartPos);
+    	SourcePosition addStartPos = new SourcePosition();
+    	start(addStartPos);
 
-        exprAST = parseMultiplicativeExpr();
-        while (currentToken.kind == Token.PLUS
+    	exprAST = parseMultiplicativeExpr();
+    	while (currentToken.kind == Token.PLUS
            || currentToken.kind == Token.MINUS) {
-            Operator opAST = acceptOperator();
+      	    Operator opAST = acceptOperator();
             Expr e2AST = parseMultiplicativeExpr();
 
-            SourcePosition addPos = new SourcePosition();
-            copyStart(addStartPos, addPos);
-            finish(addPos);
-            exprAST = new BinaryExpr(exprAST, opAST, e2AST, addPos);
-        }
-        return exprAST;
+      	    SourcePosition addPos = new SourcePosition();
+      	    copyStart(addStartPos, addPos);
+      	    finish(addPos);
+      	    exprAST = new BinaryExpr(exprAST, opAST, e2AST, addPos);
+    	}
+    	return exprAST;
     }
 
     Expr parseMultiplicativeExpr() throws SyntaxError {
+		    	
+    	Expr exprAST = null;
 
-        Expr exprAST = null;
+    	SourcePosition multStartPos = new SourcePosition();
+    	start(multStartPos);
 
-        SourcePosition multStartPos = new SourcePosition();
-        start(multStartPos);
-
-        exprAST = parseUnaryExpr();
-        while (currentToken.kind == Token.MULT
+    	exprAST = parseUnaryExpr();
+    	while (currentToken.kind == Token.MULT
            || currentToken.kind == Token.DIV) {
-            Operator opAST = acceptOperator();
-            Expr e2AST = parseUnaryExpr();
+      	    Operator opAST = acceptOperator();
+      	    Expr e2AST = parseUnaryExpr();
             SourcePosition multPos = new SourcePosition();
             copyStart(multStartPos, multPos);
             finish(multPos);
             exprAST = new BinaryExpr(exprAST, opAST, e2AST, multPos);
         }
-        return exprAST;
+    	return exprAST;
     }
 
     Expr parseUnaryExpr() throws SyntaxError {
-        SourcePosition unaryPos = new SourcePosition();
-        start(unaryPos);
+    	SourcePosition unaryPos = new SourcePosition();
+    	start(unaryPos);
 
-        return switch (currentToken.kind) {
-            case Token.MINUS, Token.PLUS, Token.NOT -> {
-                Operator opAST = acceptOperator();
-                Expr e2AST = parseUnaryExpr();
-                finish(unaryPos);
-                yield new UnaryExpr(opAST, e2AST, unaryPos);
-            }
-            default -> parsePrimaryExpr();
-        };
+    	return switch (currentToken.kind) {
+        	case Token.MINUS -> {
+            	Operator opAST = acceptOperator();
+            	Expr e2AST = parseUnaryExpr();
+            	finish(unaryPos);
+            	yield new UnaryExpr(opAST, e2AST, unaryPos);
+        	}
+        	default -> parsePrimaryExpr();
+    	};
     }
 
 
     Expr parsePrimaryExpr() throws SyntaxError {
-        SourcePosition primPos = new SourcePosition();
-        start(primPos);
+    	SourcePosition primPos = new SourcePosition();
+    	start(primPos);
 
-        return switch (currentToken.kind) {
-            case Token.ID -> {
-                Ident iAST = parseIdent();
-                finish(primPos);
-                Var simVAST = new SimpleVar(iAST, primPos);
-                yield new VarExpr(simVAST, primPos);
-            }
-            case Token.LPAREN -> {
-                accept();
-                Expr exprAST = parseExpr();
-                match(Token.RPAREN);
-                yield exprAST;
-            }
-            case Token.LBRACKET -> {
-                accept();
-                Expr exprAST = parseExpr();
-                match(Token.RBRACKET);
-                yield exprAST;
-            }
-            case Token.INTLITERAL -> {
-                IntLiteral ilAST = parseIntLiteral();
-                finish(primPos);
-                yield new IntExpr(ilAST, primPos);
-            }
-            case Token.FLOATLITERAL -> {
-                FloatLiteral flAST = parseFloatLiteral();
-                finish(primPos);
-                yield new FloatExpr(flAST, primPos);
-            }
-            case Token.BOOLEANLITERAL -> {
-                BooleanLiteral blAST = parseBooleanLiteral();
-                finish(primPos);
-                yield new BooleanExpr(blAST, primPos);
-            }
-            case Token.STRINGLITERAL -> {
-                StringLiteral slAST = parseStringLiteral();
-                finish(primPos);
-                yield new StringExpr(slAST, primPos);
-            }
-            default -> throw syntacticError("illegal primary expression", currentToken.spelling);
-        };
-    }
+    	return switch (currentToken.kind) {
+        	case Token.ID -> {
+            	Ident iAST = parseIdent();
+            	finish(primPos);
+            	Var simVAST = new SimpleVar(iAST, primPos);
+            	yield new VarExpr(simVAST, primPos);
+        	}
+        	case Token.LPAREN -> {
+            	accept();
+            	Expr exprAST = parseExpr();
+            	match(Token.RPAREN);
+            	yield exprAST;
+        	}
+        	case Token.INTLITERAL -> {
+            	IntLiteral ilAST = parseIntLiteral();
+            	finish(primPos);
+            	yield new IntExpr(ilAST, primPos);
+        	}
+        	default -> throw syntacticError("illegal primary expression", currentToken.spelling);
+    	};
+	}
 
 
 
-    // ========================== ID, OPERATOR and LITERALS ========================
+	// ========================== ID, OPERATOR and LITERALS ========================
 
-    Ident parseIdent() throws SyntaxError {
-        if (currentToken.kind != Token.ID) {
-            throw syntacticError("identifier expected here", "");
-        }
+	Ident parseIdent() throws SyntaxError {
+    	if (currentToken.kind != Token.ID) {
+        	throw syntacticError("identifier expected here", "");
+    	}
 
-        String spelling = currentToken.spelling;
-        accept();
-        return new Ident(spelling, previousTokenPosition);
-    }
+    	String spelling = currentToken.spelling;
+		accept();
+    	return new Ident(spelling, previousTokenPosition);
+	}
 
 
-    // acceptOperator parses an operator, and constructs a leaf AST for it
+	// acceptOperator parses an operator, and constructs a leaf AST for it
 
-    Operator acceptOperator() throws SyntaxError {
-        String spelling = currentToken.spelling;
-        accept();
-        return new Operator(spelling, previousTokenPosition);
-    }
+  	Operator acceptOperator() throws SyntaxError {
+    	String spelling = currentToken.spelling;
+    	accept();
+		return new Operator(spelling, previousTokenPosition);
+  	}
 
  // ========================== LITERALS ========================
     private IntLiteral parseIntLiteral() throws SyntaxError {
@@ -498,14 +452,5 @@ public class Parser {
         }
     }   
 
-    private StringLiteral parseStringLiteral() throws SyntaxError {
-        if (currentToken.kind == Token.STRINGLITERAL) {
-            String spelling = currentToken.spelling;
-            accept();
-            return new StringLiteral(spelling, previousTokenPosition);
-        } else {
-            throw syntacticError("string literal expected here", "");
-        }
-    }   
 }
 
