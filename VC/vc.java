@@ -8,7 +8,6 @@ import VC.TreeDrawer.Drawer;
 import VC.TreePrinter.Printer;
 import VC.UnParser.UnParser;
 import VC.Checker.Checker;
-import VC.StdEnvironment;
 
 public class vc {
 
@@ -33,51 +32,39 @@ public class vc {
         System.out.println("\nUsage: java VC.vc [-options] filename");
         System.out.println("\nwhere options include:");
         System.out.println("-d [1234]           display the AST (without SourcePosition)");
-        System.out.println("                    1:  the AST from the parser (without SourcePosition)");
-        System.out.println("                    2:  the AST from the parser (with SourcePosition)");
-        System.out.println("                    3:  the AST from the checker (without SourcePosition)");
-        System.out.println("                    4:  the AST from the checker (with SourcePosition)");
+        System.out.println("                    1: the AST from the parser (without SourcePosition)");
+        System.out.println("                    2: the AST from the parser (with SourcePosition)");
+        System.out.println("                    3: the AST from the checker (without SourcePosition)");
+        System.out.println("                    4: the AST from the checker (with SourcePosition)");
         System.out.println("-t [file]           print the (non-annotated) AST into <file>");
-        System.out.println("                    (or filename + \"t\" if <file> is unspecified)");
+        System.out.println("                    (or filename + \"p\" if <file> is unspecified)");
         System.out.println("-u [file]           unparse the (non-annotated) AST into <file>");
         System.out.println("                    (or filename + \"u\" if <file> is unspecified)");
         System.exit(1);
     }
 
     public static void main(String[] args) {
-        int i = 0;
-        String arg;
-
         System.out.println("======= The VC compiler =======\n");
 
-        while (i < args.length && args[i].startsWith("-")) {
-            arg = args[i++];
+        ArgReader reader = new ArgReader(args);
+        parseOptions(reader);
 
-            switch (arg) {
-                case "-d":
-                    handleDOption(args, i);
-                    break;
-                case "-t":
-                    handleTOption(args, i);
-                    break;
-                case "-u":
-                    handleUOption(args, i);
-                    break;
-                default:
-                    System.out.printf("[# vc #]: invalid option %s%n", arg);
-                    cmdLineOptions();
-            }
-        }
-
-        if (i == args.length) {
+        if (!reader.hasNext()) {
             System.out.println("[# vc #]: no input file");
             cmdLineOptions();
-        } else {
-            inputFilename = args[i];
+        }
+
+        inputFilename = reader.next();
+
+        if (reader.hasNext()) {
+            System.out.println("[# vc #]: too many command-line arguments");
+            cmdLineOptions();
         }
 
         SourceFile source = null;
         try {
+            System.out.println("input filename " + inputFilename);
+
             source = new SourceFile(inputFilename);
             reporter = new ErrorReporter();
             System.out.println("Pass 1: Lexical and syntactic Analysis");
@@ -94,51 +81,101 @@ public class vc {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            // Close the SourceFile object explicitly if needed
-			if (source != null) {
-        		try {
-            		source = null;
-        		} catch (Exception e) {
-            		e.printStackTrace();
-        		}
-    		}
+            source = null;
         }
     }
 
-    private static void handleDOption(String[] args, int i) {
-        if (i < args.length) {
-            try {
-                int n = Integer.parseInt(args[i]);
-                if (n >= 1 && n <= 4) {
-                    drawingAST = n;
-                    i++;
-                } else {
-                    System.out.println("[# vc #]: invalid option -d " + args[i]);
-                    cmdLineOptions();
-                }
-            } catch (NumberFormatException e) {
-                System.out.println("[# vc #]: invalid option -d " + args[i]);
+    private static void parseOptions(ArgReader reader) {
+        while (reader.hasNext()) {
+            String arg = reader.peek();
+            if (!arg.startsWith("-")) {
+                return;
+            }
+
+            arg = reader.next();
+
+            if (arg.equals("-d")) {
+                handleDOption(reader);
+            } else if (arg.startsWith("-d")) {
+                handleDInlineOption(arg);
+            } else if (arg.equals("-t")) {
+                handleTOption(reader);
+            } else if (arg.startsWith("-t")) {
+                handleTInlineOption(arg);
+            } else if (arg.equals("-u")) {
+                handleUOption(reader);
+            } else if (arg.startsWith("-u")) {
+                handleUInlineOption(arg);
+            } else {
+                System.out.printf("[# vc #]: invalid option %s%n", arg);
                 cmdLineOptions();
             }
         }
     }
 
-    private static void handleTOption(String[] args, int i) {
-        printingAST = true;
-        if (!args[i].equals("-t")) {
-            astFilename = args[i].substring(2);
-        } else if (i < args.length && !args[i].startsWith("-")) {
-            astFilename = args[i++];
+    private static void handleDOption(ArgReader reader) {
+        if (!reader.hasNext()) {
+            System.out.println("[# vc #]: missing argument for -d");
+            cmdLineOptions();
+        }
+
+        String value = reader.next();
+        setDrawingOption(value, "-d " + value);
+    }
+
+    private static void handleDInlineOption(String arg) {
+        String value = arg.substring(2);
+        if (value.isEmpty()) {
+            System.out.printf("[# vc #]: invalid option %s%n", arg);
+            cmdLineOptions();
+        }
+        setDrawingOption(value, arg);
+    }
+
+    private static void setDrawingOption(String value, String originalArg) {
+        try {
+            int n = Integer.parseInt(value);
+            if (n >= 1 && n <= 4) {
+                drawingAST = n;
+            } else {
+                System.out.printf("[# vc #]: invalid option %s%n", originalArg);
+                cmdLineOptions();
+            }
+        } catch (NumberFormatException e) {
+            System.out.printf("[# vc #]: invalid option %s%n", originalArg);
+            cmdLineOptions();
         }
     }
 
-    private static void handleUOption(String[] args, int i) {
-        unparsingAST = true;
-        if (!args[i].equals("-u")) {
-            astFilename = args[i].substring(2);
+    private static void handleTOption(ArgReader reader) {
+        printingAST = true;
+        if (reader.hasNext() && !reader.peek().startsWith("-")) {
+            astFilename = reader.next();
         }
-        if (i < args.length && !args[i].startsWith("-")) {
-            unparsingFilename = args[i++];
+    }
+
+    private static void handleTInlineOption(String arg) {
+        printingAST = true;
+        astFilename = arg.substring(2);
+        if (astFilename.isEmpty()) {
+            System.out.printf("[# vc #]: invalid option %s%n", arg);
+            cmdLineOptions();
+        }
+    }
+
+    private static void handleUOption(ArgReader reader) {
+        unparsingAST = true;
+        if (reader.hasNext() && !reader.peek().startsWith("-")) {
+            unparsingFilename = reader.next();
+        }
+    }
+
+    private static void handleUInlineOption(String arg) {
+        unparsingAST = true;
+        unparsingFilename = arg.substring(2);
+        if (unparsingFilename.isEmpty()) {
+            System.out.printf("[# vc #]: invalid option %s%n", arg);
+            cmdLineOptions();
         }
     }
 
@@ -164,7 +201,7 @@ public class vc {
         if (drawingAST >= 1 && drawingAST <= 2) {
             drawer = new Drawer();
             if (drawingAST == 2) {
-                drawer.enableDebugging(); // show SourcePosition
+                drawer.enableDebugging();
             }
             drawer.draw(theAST);
         }
@@ -179,13 +216,34 @@ public class vc {
             System.out.println("Compilation was unsuccessful.");
         }
 
-        if (drawingAST >= 3) {
+        if (drawingAST >= 3 && drawingAST <= 4) {
             drawer = new Drawer();
             if (drawingAST == 4) {
-                drawer.enableDebugging(); // show SourcePosition
+                drawer.enableDebugging();
             }
             drawer.draw(theAST);
         }
     }
-}
 
+    private static final class ArgReader {
+        private final String[] args;
+        private int index;
+
+        private ArgReader(String[] args) {
+            this.args = args;
+            this.index = 0;
+        }
+
+        private boolean hasNext() {
+            return index < args.length;
+        }
+
+        private String peek() {
+            return args[index];
+        }
+
+        private String next() {
+            return args[index++];
+        }
+    }
+}
