@@ -133,7 +133,7 @@ public final class Checker implements Visitor {
     public Object visitProgram(Program ast, Object o) {
         ast.FL.visit(this, null);
 
-	     // You type-checking code goes here
+         // You type-checking code goes here
 
         return null;
     }
@@ -144,7 +144,7 @@ public final class Checker implements Visitor {
     public Object visitCompoundStmt(CompoundStmt ast, Object o) {
         idTable.openScope();
 
-   	    // Your type-checking code goes here
+           // Your type-checking code goes here
 
         idTable.closeScope();
         return null;
@@ -206,8 +206,8 @@ public final class Checker implements Visitor {
 
     @Override
     public Object visitVarExpr(VarExpr ast, Object o) {
-		ast.type = (Type) ast.V.visit(this, null);
-		return ast.type;
+        ast.type = (Type) ast.V.visit(this, null);
+        return ast.type;
     }
 
     @Override
@@ -226,7 +226,7 @@ public final class Checker implements Visitor {
 
         // HINT: Pass ast as the 2nd argument so that the formal parameters
         // of the function can be extracted when the function body is visited.
-		//
+        //
 
         ast.S.visit(this, ast); // Visit the function body
 
@@ -249,16 +249,16 @@ public final class Checker implements Visitor {
     public Object visitGlobalVarDecl(GlobalVarDecl ast, Object o) {
         declareVariable(ast.I, ast);
 
-		// Fill the rest
-	
+        // Fill the rest
+
         return null;
     }
 
     @Override
     public Object visitLocalVarDecl(LocalVarDecl ast, Object o) {
         declareVariable(ast.I, ast);
-	
-		// Fill the rest
+
+        // Fill the rest
 
         return null;
     }
@@ -268,7 +268,7 @@ public final class Checker implements Visitor {
     @Override
     public Object visitParaList(ParaList ast, Object o) {
 
-		// Fill the rest
+        // Fill the rest
 
         return null;
     }
