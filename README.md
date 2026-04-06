@@ -2,7 +2,8 @@ Some tasks I'm gonna list here, IDK.
 
 - [x] Fix errors in Parser.java
 
-Implement Visitor overrides in Checker.
+Complete Type Checker by
+implementing Visitor overrides in Checker.
 
 ## Programs
 - [ ] visitProgram

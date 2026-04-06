@@ -48,6 +48,11 @@ import VC.StdEnvironment;
 import java.util.Objects;
 import java.util.Optional;
 
+// student imports
+import java.util.function.Predicate;
+import java.util.function.BiPredicate;
+import java.util.Set;
+
 public final class Checker implements Visitor {
 
     // Enum for error messages
@@ -127,6 +132,14 @@ public final class Checker implements Visitor {
         ast.visit(this, null);
     }
 
+    public Type getType(AST ast) {
+        Object type = ast.visit(this, null);
+        if (!(type instanceof Type)) {
+            reporter.reportError("Programming Error: visit function did not return a type!", "", ast.position);
+        }
+        return (Type) type;
+    }
+
     // =========================== PROGRAMS ===========================
 
     @Override
@@ -178,6 +191,102 @@ public final class Checker implements Visitor {
     }
 
     // Expressions
+    public Object visitUnaryExpr(UnaryExpr ast, Object o) {
+
+    }
+
+    // TODO: incomplete implementation
+    public Object visitBinaryExpr(BinaryExpr ast, Object o) {
+        Predicate<Type> isNumeric = t -> t == StdEnvironment.floatType
+                || t == StdEnvironment.intType;
+        BiPredicate<Type, Type> isFloat = (t1, t2) -> t1 == StdEnvironment.floatType
+                || t2 == StdEnvironment.floatType;
+        Set<String> relational = Set.of("<", "<=", ">=", ">");
+        Set<String> arithmetic = Set.of("+", "-", "*", "/");
+        Set<String> equality = Set.of("==", "!=");
+        Set<String> logical = Set.of("||", "&&", "!");
+        String assignment = "=";
+        Type express1Type = getType(ast.E1);
+        Type express2Type = getType(ast.E2);
+        String operator = ast.O.spelling;
+        // bools and numeric types can never mix
+        if (isNumeric.test(express1Type) != isNumeric.test(express2Type)) {
+            reporter.reportError(
+                ErrorMessage.INCOMPATIBLE_TYPE_FOR_BINARY_OPERATOR.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        // TODO: determine order of matching between kinds of binary expressions
+        if (relational.contains(operator)) {
+            boolean valid = isNumeric.test(express1Type)
+                    && isNumeric.test(express2Type);
+            if (!valid) {
+                reporter.reportError(
+                    ErrorMessage.INCOMPATIBLE_TYPE_FOR_BINARY_OPERATOR.getMessage(),
+                    "",
+                    ast.position
+                );
+                return StdEnvironment.errorType;
+            }
+            return StdEnvironment.booleanType;
+        }
+
+        if (arithmetic.contains(operator)) {
+            boolean valid = isNumeric.test(express1Type)
+                    && isNumeric.test(express2Type);
+            if (!valid) {
+                reporter.reportError(
+                    ErrorMessage.INCOMPATIBLE_TYPE_FOR_BINARY_OPERATOR.getMessage(),
+                    "",
+                    ast.position
+                );
+                return StdEnvironment.errorType;
+            }
+            if (isFloat.test(express1Type, express2Type)) return StdEnvironment.floatType;
+            return StdEnvironment.intType
+        }
+
+        if (logical.contains(operator)) {
+            boolean valid = express1Type == StdEnvironment.booleanType
+                && express2Type == StdEnvironment.booleanType;
+            if (!valid) {
+                reporter.reportError(
+                    ErrorMessage.INCOMPATIBLE_TYPE_FOR_BINARY_OPERATOR.getMessage(),
+                    "",
+                    ast.position
+                );
+                return StdEnvironment.errorType;
+            }
+            return StdEnvironment.booleanType;
+        }
+
+        if (operator == assignment) {
+            // NOTE: for this to work, ast.E1 *must* be non-null.
+            boolean lhsIsId = ast.E1 instanceof Ident;
+            boolean matchingType = getType(ast.E1) == getType(ast.E2);
+            boolean valid = matchingType == lhsIsId;
+            if (!valid) {
+                reporter.reportError(
+                    ErrorMessage.INCOMPATIBLE_TYPE_FOR_ASSIGNMENT.getMessage(),
+                    "",
+                    ast.position
+                );
+                return StdEnvironment.errorType;
+            }
+            return getType(ast.E1);
+        }
+
+        // the previous code making up this function is exhaustive in terms of its operators
+        // therefore it should never reach here.
+        reporter.reportError(
+           "error on visitBinaryExpr(): executed unreachable code/unhandled case found.",
+            "",
+            ast.position
+        );
+        return StdEnvironment.errorType;
+    }
 
 
     @Override
@@ -250,6 +359,11 @@ public final class Checker implements Visitor {
         declareVariable(ast.I, ast);
 
         // Fill the rest
+        Type declaredType = ast.T;
+        Type expressionType = getType(ast.E);
+        if (declaredType != expressionType) {
+            reporter.reportError(ErrorMessage.INCOMPATIBLE_TYPE_FOR_ASSIGNMENT.getMessage(), "", ast.position);
+        }
 
         return null;
     }
@@ -259,6 +373,11 @@ public final class Checker implements Visitor {
         declareVariable(ast.I, ast);
 
         // Fill the rest
+        Type declaredType = ast.T;
+        Type expressionType = getType(ast.E);
+        if (declaredType != expressionType) {
+            reporter.reportError(ErrorMessage.INCOMPATIBLE_TYPE_FOR_ASSIGNMENT.getMessage(), "", ast.position);
+        }
 
         return null;
     }
