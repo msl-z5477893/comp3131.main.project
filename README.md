@@ -13,9 +13,9 @@ Stubbed, implementation incomplete.
 
 - [x] visitEmptyDeclList
 - [x] visitEmptyStmtList
-- [ ] visitEmptyArrayExprList
+- [x] visitEmptyArrayExprList
 - [x] visitEmptyParaList
-- [ ] visitEmptyArgList
+- [x] visitEmptyArgList
 
 ## Declarations
 - [x] visitDeclList
@@ -25,9 +25,9 @@ so it's guaranteed this is correctly implemented.
 Stubbed, incomplete implementation.
 What is currently within the scope is for
 the identification subphase.
-- [ ] visitGlobalVarDecl
+- [x] visitGlobalVarDecl
 Commented as incomplete, unsure what's missing though.
-- [ ] visitLocalVarDecl
+- [x] visitLocalVarDecl
 Same as `visitGlobalVarDecl`.
 
 ## Stmts
@@ -54,11 +54,11 @@ rare or should not have happened.
 - [x] visitStringExpr
 I assume these four are implemented correctly, but the fact that literals
 exist don't exactly makes this easy.
-- [ ] visitUnaryExpr
-- [ ] visitBinaryExpr
+- [x] visitUnaryExpr
+- [x] visitBinaryExpr
 - [ ] visitArrayInitExpr
 - [ ] visitArrayExprList
-- [ ] visitArrayExpr
+- [x] visitArrayExpr
 - [x] visitVarExpr
 I'm not sure what this one does, so while we consider it implemented, probably
 give it a lookback just in case it all goes wrong.
@@ -94,4 +94,4 @@ give it a lookback just in case it all goes wrong.
 
 
 ## Variables
-- [ ] visitSimpleVar
+- [x] visitSimpleVar

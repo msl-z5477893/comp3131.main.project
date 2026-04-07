@@ -190,9 +190,43 @@ public final class Checker implements Visitor {
         return null;
     }
 
+    @Override
+    public Object visitEmptyArrayExprList(EmptyArrayExprList ast, Object o) {
+        return null;
+    }
+
     // Expressions
     public Object visitUnaryExpr(UnaryExpr ast, Object o) {
-
+        String operator = ast.O.spelling;
+        if (operator == "+" || operator == "-") {
+            if (!(getType(ast.E) == StdEnvironment.intType
+                    || getType(ast.E) == StdEnvironment.floatType)) {
+                reporter.reportError(
+                    ErrorMessage.INCOMPATIBLE_TYPE_FOR_UNARY_OPERATOR.getMessage(),
+                    "",
+                    ast.position
+                );
+                return StdEnvironment.errorType;
+            }
+            return getType(ast.E);
+        }
+        if (operator == "!") {
+            if (getType(ast.E) != StdEnvironment.booleanType) {
+                reporter.reportError(
+                    ErrorMessage.INCOMPATIBLE_TYPE_FOR_UNARY_OPERATOR.getMessage(),
+                    "",
+                    ast.position
+                );
+                return StdEnvironment.errorType;
+            }
+            return StdEnvironment.booleanType;
+        }
+        reporter.reportError(
+           "error on visitUnaryExpr(): executed unreachable code/unhandled case found.",
+            "",
+            ast.position
+        );
+        return StdEnvironment.errorType;
     }
 
     // TODO: incomplete implementation
@@ -218,7 +252,9 @@ public final class Checker implements Visitor {
             );
             return StdEnvironment.errorType;
         }
-        // TODO: determine order of matching between kinds of binary expressions
+
+        // TODO: for each productive (non-error) cases, edit the type attribute of the
+        // Expr object.
         if (relational.contains(operator)) {
             boolean valid = isNumeric.test(express1Type)
                     && isNumeric.test(express2Type);
@@ -245,7 +281,7 @@ public final class Checker implements Visitor {
                 return StdEnvironment.errorType;
             }
             if (isFloat.test(express1Type, express2Type)) return StdEnvironment.floatType;
-            return StdEnvironment.intType
+            return StdEnvironment.intType;
         }
 
         if (logical.contains(operator)) {
@@ -264,9 +300,10 @@ public final class Checker implements Visitor {
 
         if (operator == assignment) {
             // NOTE: for this to work, ast.E1 *must* be non-null.
-            boolean lhsIsId = ast.E1 instanceof Ident;
-            boolean matchingType = getType(ast.E1) == getType(ast.E2);
-            boolean valid = matchingType == lhsIsId;
+            boolean lhsIsId = Ident.class.isInstance(ast.E1);
+            // boolean isFloat = isNumeric.test(getType(ast.E1)) == isNumeric.test(getType(ast.E2)); 
+            boolean assignable = getType(ast.E1).assignable(ast.E2);
+            boolean valid = assignable && lhsIsId;
             if (!valid) {
                 reporter.reportError(
                     ErrorMessage.INCOMPATIBLE_TYPE_FOR_ASSIGNMENT.getMessage(),
@@ -415,7 +452,10 @@ public final class Checker implements Visitor {
     // =========================== ARGUMENTS ===========================
    
     // Your visitor methods for arguments go here
-
+    @Override
+    public  Object visitEmptyArgList(EmptyArgList ast, Object o) {
+        return null;
+    }
     // =========================== TYPES ===========================
 
     @Override
@@ -488,6 +528,14 @@ public final class Checker implements Visitor {
     }
 
     // =========================== VARIABLE NAMES ===========================
+
+    @Override
+    public Object visitSimpleVar(SimpleVar ast, Object o) {
+        IdEntry identName = idTable.retrieve(ast.I.spelling).get();
+        Type t = identName.attr.T;
+        ast.type = t;
+        return t;
+    }
 
     // Creates a small AST to represent the "declaration" of each built-in
     // function, and enters it in the symbol table.
