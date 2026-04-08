@@ -475,6 +475,8 @@ public final class Checker implements Visitor {
     public Object visitParaList(ParaList ast, Object o) {
 
         // Fill the rest
+        ast.getHead().visit(this, null);
+        ast.getNext().visit(this, null);
 
         return null;
     }
