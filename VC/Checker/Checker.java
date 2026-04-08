@@ -146,7 +146,24 @@ public final class Checker implements Visitor {
     public Object visitProgram(Program ast, Object o) {
         ast.FL.visit(this, null);
 
-         // You type-checking code goes here
+        // You type-checking code goes here
+        Optional<IdEntry> findMain = idTable.retrieve("main");
+        if (!findMain.isPresent()) {
+            reporter.reportError(
+                ErrorMessage.MISSING_MAIN.getMessage(),
+                "",
+                ast.position
+            );
+        } else {
+            Decl mainDecl = (Decl) findMain.get().attr;
+            if (mainDecl.T != StdEnvironment.intType) {
+                reporter.reportError(
+                    ErrorMessage.MAIN_RETURN_TYPE_NOT_INT.getMessage(),
+                    "",
+                    ast.position
+                );
+            }
+        }
 
         return null;
     }
@@ -159,6 +176,24 @@ public final class Checker implements Visitor {
 
            // Your type-checking code goes here
 
+        if (o instanceof FuncDecl) {
+            ((FuncDecl) o).PL.forEach(param -> declareVariable(param.I, param));
+        }
+        ast.SL.visit(this, null);
+
+        // function declarations always have compound statements
+        if (o instanceof FuncDecl) {
+            java.util.List<Type> returnTypes = ast.SL.stream()
+                .filter(stmt -> stmt instanceof ReturnStmt)
+                .map(returnStmt -> ((ReturnStmt) returnStmt).E.type)
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+
+            if (returnTypes.size() > 1) {
+                return StdEnvironment.errorType;
+            } else return (Type) returnTypes.get(1);
+        }
+
         idTable.closeScope();
         return null;
     }
@@ -168,10 +203,10 @@ public final class Checker implements Visitor {
         ast.getHead().visit(this, o); 
         if (ast.getHead() instanceof ReturnStmt && ast.getNext() instanceof StmtList) {
             reporter.reportError(ErrorMessage.STATEMENTS_NOT_REACHED.getMessage(), "", ast.getNext().position);
-        }   
+        }
         ast.getNext().visit(this, o); 
         return null;
-    }   
+    }
 
     @Override
     public Object visitExprStmt(ExprStmt ast, Object o) {
@@ -325,6 +360,20 @@ public final class Checker implements Visitor {
         return StdEnvironment.errorType;
     }
 
+    @Override
+    public Object visitCallExpr(CallExpr ast, Object o) {
+        Optional<IdEntry> funcEntry = idTable.retrieve(ast.I.spelling);
+        if (!funcEntry.isPresent()) {
+            reporter.reportError(
+                ErrorMessage.IDENTIFIER_UNDECLARED.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        FuncDecl funcDecl = (FuncDecl) funcEntry.get().attr;
+        ast.AL.visit(this, funcDecl.PL);
+    }
 
     @Override
     public Object visitEmptyExpr(EmptyExpr ast, Object o) {
@@ -369,6 +418,7 @@ public final class Checker implements Visitor {
         idTable.insert(ast.I.spelling, ast); // Insert the function declaration into the symbol table
 
         // Your code goes here
+        ast.PL.visit(this, null);
 
         // HINT: Pass ast as the 2nd argument so that the formal parameters
         // of the function can be extracted when the function body is visited.
@@ -455,6 +505,28 @@ public final class Checker implements Visitor {
     @Override
     public  Object visitEmptyArgList(EmptyArgList ast, Object o) {
         return null;
+    }
+
+    @Override
+    public Object visitArgList(ArgList ast, Object o) {
+        // TODO: perform type checks here (expands to visitArg())
+        // NOTE: to do the type checking we need to do CallExpr first
+        ast.getHead().visit(this, ((ParaList) o).getHead()); 
+        ast.getNext().visit(this, ((ParaList) o).getNext());
+    }
+
+    @Override
+    public Object visitArg(Arg ast, Object o) {
+        Type argType = getType(ast.E);
+        if (!((ParaDecl) o).T.assignable(argType)) {
+            reporter.reportError(
+                ErrorMessage.WRONG_TYPE_FOR_ACTUAL_PARAMETER.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        return argType;
     }
     // =========================== TYPES ===========================
 

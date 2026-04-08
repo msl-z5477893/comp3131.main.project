@@ -6,7 +6,7 @@ Complete Type Checker by
 implementing Visitor overrides in Checker.
 
 ## Programs
-- [ ] visitProgram
+- [x] visitProgram
 Stubbed, implementation incomplete.
 
 ## Lists for denoting the null reference
@@ -39,8 +39,8 @@ Implied complete as per assignment spec.
 - [ ] visitBreakStmt
 - [ ] visitContinueStmt
 - [ ] visitReturnStmt
-- [ ] visitCompoundStmt
-Subbed, implementation incomplete.
+- [x] visitCompoundStmt
+Stubbed, implementation incomplete.
 - [x] visitExprStmt
 Most likely complete, any issues that may involve this function is either
 rare or should not have happened.
@@ -62,7 +62,7 @@ exist don't exactly makes this easy.
 - [x] visitVarExpr
 I'm not sure what this one does, so while we consider it implemented, probably
 give it a lookback just in case it all goes wrong.
-- [ ] visitCallExpr
+- [x] visitCallExpr
 - [ ] visitAssignExpr
 - [x] visitEmptyExpr
 
@@ -76,12 +76,12 @@ give it a lookback just in case it all goes wrong.
 
 ## Parameters
 
-- [x] visitParaList
+- [ ] visitParaList
 - [x] visitParaDecl
 
 ## Arguments
-- [ ] visitArgList
-- [ ] visitArg
+- [x] visitArgList
+- [x] visitArg
 
 ## Types
 - [x] visitVoidType
