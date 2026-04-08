@@ -76,7 +76,7 @@ give it a lookback just in case it all goes wrong.
 
 ## Parameters
 
-- [ ] visitParaList
+- [x] visitParaList
 - [x] visitParaDecl
 
 ## Arguments
