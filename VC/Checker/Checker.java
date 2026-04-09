@@ -183,15 +183,15 @@ public final class Checker implements Visitor {
 
         // function declarations always have compound statements
         if (o instanceof FuncDecl) {
-            java.util.List<Type> returnTypes = ast.SL.stream()
+            Set<Type> returnTypes = ast.SL.stream()
                 .filter(stmt -> stmt instanceof ReturnStmt)
                 .map(returnStmt -> ((ReturnStmt) returnStmt).E.type)
                 .distinct()
-                .collect(java.util.stream.Collectors.toList());
+                .collect(java.util.stream.Collectors.toSet());
 
             if (returnTypes.size() > 1) {
                 return StdEnvironment.errorType;
-            } else return (Type) returnTypes.get(1);
+            } else return (Type) (new java.util.ArrayList<>(returnTypes)).get(0);
         }
 
         idTable.closeScope();
@@ -511,10 +511,10 @@ public final class Checker implements Visitor {
 
     @Override
     public Object visitArrayExprList(ArrayExprList ast, Object o) {
-        java.util.List<Type> returnTypes = ast.stream()
+        Set<Type> returnTypes = ast.stream()
             .map(stmt -> getType(stmt))
             .distinct()
-            .collect(java.util.stream.Collectors.toList());
+            .collect(java.util.stream.Collectors.toSet());
         if (returnTypes.size() > 1) {
             reporter.reportError(
                 ErrorMessage.WRONG_TYPE_FOR_ARRAY_INITIALISER.getMessage(),
@@ -523,7 +523,7 @@ public final class Checker implements Visitor {
             );
             return StdEnvironment.errorType;
         }
-        return returnTypes.get(1);
+        return (new java.util.ArrayList<>(returnTypes)).get(0);
     }
 
     @Override
@@ -774,8 +774,16 @@ public final class Checker implements Visitor {
 
     @Override
     public Object visitSimpleVar(SimpleVar ast, Object o) {
-        IdEntry identName = idTable.retrieve(ast.I.spelling).get();
-        Type t = identName.attr.T;
+        Optional<IdEntry> identName = idTable.retrieve(ast.I.spelling);
+        if (!identName.isPresent()) {
+            reporter.reportError(
+                ErrorMessage.IDENTIFIER_UNDECLARED.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        Type t = identName.get().attr.T;
         ast.type = t;
         return t;
     }
