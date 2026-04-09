@@ -21,7 +21,7 @@ Stubbed, implementation incomplete.
 - [x] visitDeclList
 DeclList (and other AST list in general) are implemented linked-list style,
 so it's guaranteed this is correctly implemented.
-- [ ] visitFuncDecl
+- [x] visitFuncDecl
 Stubbed, incomplete implementation.
 What is currently within the scope is for
 the identification subphase.
@@ -36,15 +36,15 @@ Implied complete as per assignment spec.
 - [ ] visitIfStmt
 - [ ] visitWhileStmt
 - [ ] visitForStmt
-- [ ] visitBreakStmt
-- [ ] visitContinueStmt
-- [ ] visitReturnStmt
+- [x] visitBreakStmt
+- [x] visitContinueStmt
+- [x] visitReturnStmt
 - [x] visitCompoundStmt
 Stubbed, implementation incomplete.
 - [x] visitExprStmt
 Most likely complete, any issues that may involve this function is either
 rare or should not have happened.
-- [ ] visitEmptyCompStmt
+- [x] visitEmptyCompStmt
 - [x] visitEmptyStmt
 
 ## Expressions
@@ -56,14 +56,14 @@ I assume these four are implemented correctly, but the fact that literals
 exist don't exactly makes this easy.
 - [x] visitUnaryExpr
 - [x] visitBinaryExpr
-- [ ] visitArrayInitExpr
-- [ ] visitArrayExprList
+- [x] visitArrayInitExpr
+- [x] visitArrayExprList
 - [x] visitArrayExpr
 - [x] visitVarExpr
 I'm not sure what this one does, so while we consider it implemented, probably
 give it a lookback just in case it all goes wrong.
 - [x] visitCallExpr
-- [ ] visitAssignExpr
+- [x] visitAssignExpr
 - [x] visitEmptyExpr
 
 ## Literals and identifiers

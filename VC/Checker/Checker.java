@@ -214,6 +214,74 @@ public final class Checker implements Visitor {
         return null;
     }
 
+    @Override
+    public Object visitIfStmt(IfStmt ast, Object o) {
+        if (ast.S1 != null) ast.S1.visit(this, null);
+        if (ast.S2 != null) ast.S2.visit(this, null);
+        Type condType = getType(ast.E);
+        if (condType != StdEnvironment.booleanType) {
+            reporter.reportError(
+                ErrorMessage.IF_CONDITIONAL_NOT_BOOLEAN.getMessage(),
+                "",
+                ast.position
+            );
+        }
+        return null;
+    }
+
+    @Override
+    public Object visitWhileStmt(WhileStmt ast, Object o) {
+        ast.S.visit(this, ast);
+        Type condType = getType(ast.E);
+        if (condType != StdEnvironment.booleanType) {
+            reporter.reportError(
+                ErrorMessage.WHILE_CONDITIONAL_NOT_BOOLEAN.getMessage(),
+                "",
+                ast.position
+            );
+        }
+        return null;
+    }
+
+    @Override
+    public Object visitForStmt(ForStmt ast, Object o) {
+        ast.S.visit(this, ast);
+        Type condType = getType(ast.E2);
+        if (condType != StdEnvironment.booleanType) {
+            reporter.reportError(
+                ErrorMessage.FOR_CONDITIONAL_NOT_BOOLEAN.getMessage(),
+                "",
+                ast.position
+            );
+        }
+        return null;
+    }
+
+    @Override
+    public Object visitBreakStmt(BreakStmt ast, Object o) {
+        boolean inAllowedScope = o instanceof ForStmt || o instanceof WhileStmt;
+        if (!inAllowedScope) {
+            reporter.reportError(
+                ErrorMessage.BREAK_NOT_IN_LOOP.getMessage(),
+                "",
+                ast.position
+            );
+        }
+        return null;
+    }
+
+    @Override
+    public Object visitContinueStmt(ContinueStmt ast, Object o) {
+        boolean inAllowedScope = o instanceof ForStmt || o instanceof WhileStmt;
+        if (!inAllowedScope) {
+            reporter.reportError(
+                ErrorMessage.CONTINUE_NOT_IN_LOOP.getMessage(),
+                "",
+                ast.position
+            );
+        }
+        return null;
+    }
 
     @Override
     public Object visitEmptyStmt(EmptyStmt ast, Object o) {
@@ -230,9 +298,20 @@ public final class Checker implements Visitor {
         return null;
     }
 
+    @Override
+    public Object visitEmptyCompStmt(EmptyCompStmt ast, Object o) {
+        return null;
+    }
+
+    @Override
+    public Object visitReturnStmt(ReturnStmt ast, Object o) {
+        return getType(ast.E);
+    }
+
     // Expressions
     public Object visitUnaryExpr(UnaryExpr ast, Object o) {
         String operator = ast.O.spelling;
+        boolean success = false;
         if (operator == "+" || operator == "-") {
             if (!(getType(ast.E) == StdEnvironment.intType
                     || getType(ast.E) == StdEnvironment.floatType)) {
@@ -243,7 +322,9 @@ public final class Checker implements Visitor {
                 );
                 return StdEnvironment.errorType;
             }
-            return getType(ast.E);
+            // return getType(ast.E);
+            success = true;
+            ast.type = getType(ast.E);
         }
         if (operator == "!") {
             if (getType(ast.E) != StdEnvironment.booleanType) {
@@ -254,8 +335,10 @@ public final class Checker implements Visitor {
                 );
                 return StdEnvironment.errorType;
             }
-            return StdEnvironment.booleanType;
+            success = true;
+            ast.type = StdEnvironment.booleanType;
         }
+        if (success) return ast.type;
         reporter.reportError(
            "error on visitUnaryExpr(): executed unreachable code/unhandled case found.",
             "",
@@ -277,6 +360,7 @@ public final class Checker implements Visitor {
         String assignment = "=";
         Type express1Type = getType(ast.E1);
         Type express2Type = getType(ast.E2);
+        boolean success = false;
         String operator = ast.O.spelling;
         // bools and numeric types can never mix
         if (isNumeric.test(express1Type) != isNumeric.test(express2Type)) {
@@ -301,7 +385,9 @@ public final class Checker implements Visitor {
                 );
                 return StdEnvironment.errorType;
             }
-            return StdEnvironment.booleanType;
+            // return StdEnvironment.booleanType;
+            success = true;
+            ast.type = StdEnvironment.booleanType;
         }
 
         if (arithmetic.contains(operator)) {
@@ -316,7 +402,9 @@ public final class Checker implements Visitor {
                 return StdEnvironment.errorType;
             }
             if (isFloat.test(express1Type, express2Type)) return StdEnvironment.floatType;
-            return StdEnvironment.intType;
+            // return StdEnvironment.intType;
+            success = true;
+            ast.type = StdEnvironment.intType;
         }
 
         if (logical.contains(operator)) {
@@ -330,7 +418,9 @@ public final class Checker implements Visitor {
                 );
                 return StdEnvironment.errorType;
             }
-            return StdEnvironment.booleanType;
+            // return StdEnvironment.booleanType;
+            success = true;
+            ast.type = StdEnvironment.booleanType;
         }
 
         if (operator == assignment) {
@@ -347,9 +437,12 @@ public final class Checker implements Visitor {
                 );
                 return StdEnvironment.errorType;
             }
-            return getType(ast.E1);
+            // return getType(ast.E1);
+            success = true;
+            ast.type = getType(ast.E1);
         }
 
+        if (success) return ast.type;
         // the previous code making up this function is exhaustive in terms of its operators
         // therefore it should never reach here.
         reporter.reportError(
@@ -358,6 +451,79 @@ public final class Checker implements Visitor {
             ast.position
         );
         return StdEnvironment.errorType;
+    }
+
+    @Override
+    public Object visitAssignExpr(AssignExpr ast, Object o) {
+        Type express1Type = getType(ast.E1);
+        Type express2Type = getType(ast.E2);
+        if (!(express1Type == express2Type)) {
+            reporter.reportError(
+                ErrorMessage.WRONG_TYPE_FOR_ARRAY_INITIALISER.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        ast.type = express1Type;
+        return ast.type;
+    }
+
+    @Override
+    public Object visitArrayInitExpr(ArrayInitExpr ast, Object o) {
+        Type returnType = getType(ast.IL);
+        if (returnType == StdEnvironment.errorType
+                || returnType == StdEnvironment.voidType) {
+            reporter.reportError(
+                ErrorMessage.WRONG_TYPE_FOR_ARRAY_INITIALISER.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        ast.type = returnType;
+        return ast.type;
+    }
+
+    @Override
+    public Object visitArrayExpr(ArrayExpr ast, Object o) {
+        Type indexType = getType(ast.E);
+        Optional<IdEntry> idExist = idTable.retrieve(((SimpleVar) ast.V).I.spelling);
+        if (!idExist.isPresent()) {
+            reporter.reportError(
+                ErrorMessage.IDENTIFIER_UNDECLARED.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        if (indexType != StdEnvironment.intType) {
+            reporter.reportError(
+                ErrorMessage.INCOMPATIBLE_TYPE_FOR_ASSIGNMENT.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        ast.type = idExist.get().attr.T;
+        return ast.type;
+    }
+
+    @Override
+    public Object visitArrayExprList(ArrayExprList ast, Object o) {
+        java.util.List<Type> returnTypes = ast.stream()
+            .map(stmt -> getType(stmt))
+            .distinct()
+            .collect(java.util.stream.Collectors.toList());
+        if (returnTypes.size() > 1) {
+            reporter.reportError(
+                ErrorMessage.WRONG_TYPE_FOR_ARRAY_INITIALISER.getMessage(),
+                "",
+                ast.position
+            );
+            return StdEnvironment.errorType;
+        }
+        return returnTypes.get(1);
     }
 
     @Override
@@ -373,6 +539,8 @@ public final class Checker implements Visitor {
         }
         FuncDecl funcDecl = (FuncDecl) funcEntry.get().attr;
         ast.AL.visit(this, funcDecl.PL);
+        ast.type = funcDecl.T;
+        return ast.type;
     }
 
     @Override
@@ -515,6 +683,7 @@ public final class Checker implements Visitor {
         // NOTE: to do the type checking we need to do CallExpr first
         ast.getHead().visit(this, ((ParaList) o).getHead()); 
         ast.getNext().visit(this, ((ParaList) o).getNext());
+        return null;
     }
 
     @Override
